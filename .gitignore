@@ -1,0 +1,41 @@
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Node.js and React Native
+node_modules/
+.expo/
+dist/
+build/
+npm-debug.log*
+
+# Local databases
+*.db
+*.sqlite3
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# IDE and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Kubernetes and Terraform local files
+*.tfstate
+*.tfstate.*
+.terraform/
+kubeconfig
