@@ -159,3 +159,41 @@ def delete_task(task_id: int) -> dict:
                 )
 
             return deleted_task
+
+
+def schedule_task(task_id: int, due_at: str) -> dict:
+    """
+    Set the deadline of an existing task.
+
+    Args:
+        task_id: The ID of the task to schedule.
+        due_at: An ISO 8601 date and time with a UTC offset,
+                such as '2026-10-30T18:00:00+01:00'.
+
+    Returns:
+        The updated task, including its deadline.
+    """
+    if task_id <= 0:
+        raise ValueError("Task ID must be positive.")
+
+    with get_connection() as conn:
+        with conn.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                UPDATE tasks
+                SET due_at = %s
+                WHERE id = %s
+                RETURNING id, title, description,
+                          completed, created_at, due_at
+                """,
+                (due_at, task_id),
+            )
+
+            result = cursor.fetchone()
+
+            if result is None:
+                raise ValueError(
+                    f"Task {task_id} does not exist."
+                )
+
+            return result

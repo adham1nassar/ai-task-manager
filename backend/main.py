@@ -1,8 +1,11 @@
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import HTTPException
 from backend.database import get_connection
 from psycopg import sql
+from agents.supervisor import run_supervisor
+
 
 app = FastAPI(
     title="AI Task Manager API",
@@ -10,7 +13,16 @@ app = FastAPI(
     version="0.1.0",
 )
 
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:8081",
+        "http://127.0.0.1:8081",
+    ],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
+    allow_headers=["Content-Type"],
+)
 
 
 @app.get("/tasks")
@@ -22,7 +34,7 @@ def get_tasks():
             # 2. Retrieve all tasks from the database
             cursor.execute(
                 """
-                SELECT id, title, description, completed, created_at
+                SELECT id, title, description, completed, created_at, due_at
                 FROM tasks
                 ORDER BY id
                 """
@@ -68,9 +80,6 @@ class TaskCreate(BaseModel):
     description: str = ""
 
 
-
-
-
 @app.post("/tasks", status_code=201)
 def create_task(task: TaskCreate):
     # 1. Connect to PostgreSQL
@@ -113,15 +122,10 @@ def create_task(task: TaskCreate):
             return new_task
 
 
-
-
-
 class TaskUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
     completed: bool | None = None
-
-
 
 
 @app.patch("/tasks/{task_id}")
@@ -243,3 +247,18 @@ def delete_task(task_id: int):
                 "message": "Task deleted successfully",
                 "deleted_task": deleted_task
             }
+
+
+class ChatRequest(BaseModel):
+    message: str
+
+
+class ChatResponse(BaseModel):
+    response: str
+
+
+@app.post("/chat", response_model=ChatResponse)
+def chat(request: ChatRequest):
+    answer = run_supervisor(request.message)
+
+    return ChatResponse(response=answer)
