@@ -1,0 +1,233 @@
+{
+  "name": "AI Task Manager - Deadline Checker",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b33f3d92-8c4d-46a1-8880-e750a5e5c19e",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "\nSELECT id, title, description, due_at, completed\nFROM tasks\nWHERE completed = FALSE\n  AND due_at IS NOT NULL\n  AND due_at >= NOW()\n  AND due_at < NOW() + INTERVAL '24 hours'\n  AND reminder_sent_at IS NULL\nORDER BY due_at ASC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.8,
+      "position": [
+        224,
+        0
+      ],
+      "id": "1f2fd6c8-d6b3-446c-9068-ee8464ac6245",
+      "name": "Execute a SQL query",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "S2feNgzzIRBaET0I",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "c10bffc9-b491-4c1b-89bf-97558eff21b0",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        448,
+        0
+      ],
+      "id": "d4b6bb2d-74ef-4611-8b5e-ad54290bf5f4",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "040309fc-2741-4fdb-8a27-f717112e7c79",
+              "name": "task_id",
+              "value": "={{ $json.id }}",
+              "type": "number"
+            },
+            {
+              "id": "22b76d88-2efa-443b-8205-aa69b5ac39ff",
+              "name": "reminder_message",
+              "value": "={{ \"Reminder: \" + $json.title + \" is due on \" + DateTime.fromISO($json.due_at).setZone(\"Europe/Berlin\").toFormat(\"dd LLL yyyy, HH:mm\") + \".\" }}",
+              "type": "string"
+            },
+            {
+              "id": "0e0903c4-ea5b-41b5-a14d-1193178d5c0b",
+              "name": "due_at",
+              "value": "={{ $json.due_at }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        672,
+        -96
+      ],
+      "id": "9a8b9634-0eac-4437-8920-554311660140",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "sendTo": "adhamnassargr@gmail.com",
+        "subject": "AI Task Manager - Deadline Reminder",
+        "emailType": "text",
+        "message": "={{ $json.reminder_message }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        -96
+      ],
+      "id": "c8258006-0d6e-4adc-93aa-7d9ca34ed84c",
+      "name": "Send a message",
+      "webhookId": "a1c13d03-4531-412b-bc7e-c28d96f293df",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "RYziOCtz3lZeYJSf",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "\nUPDATE tasks\nSET reminder_sent_at = NOW()\nWHERE id = $1\n  AND reminder_sent_at IS NULL\nRETURNING id, title, reminder_sent_at;\n",
+        "options": {
+          "queryReplacement": "={{ $('Edit Fields').item.json.task_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.8,
+      "position": [
+        1024,
+        -96
+      ],
+      "id": "c6886da8-bddd-4260-8805-14d282cc2fdb",
+      "name": "Mark Reminder as Sent",
+      "credentials": {
+        "postgres": {
+          "id": "S2feNgzzIRBaET0I",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Mark Reminder as Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "6a858eec-6128-4d17-93d3-72490cf495b1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8615ba7678491d6159c617430e01f3ea4f2e33155ef7d09dfa93a11c1215edcb"
+  },
+  "nodeGroups": [],
+  "id": "xM64MAKAOZ5ELJjt",
+  "tags": []
+}
