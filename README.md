@@ -51,6 +51,7 @@ The FastAPI backend provides the application API. The supervisor agent interpret
 
 PostgreSQL stores task data, while n8n independently checks upcoming deadlines and triggers email reminders.
 
+
 ## Project Structure
 
 ```text
@@ -71,14 +72,18 @@ ai-task-manager/
 │   ├── App.tsx
 │   ├── package.json
 │   └── assets/
+├── n8n/
+│   └── deadline-reminder.json
 ├── .github/
 │   └── workflows/
 │       └── ci.yaml
 ├── compose.yaml
 ├── .dockerignore
+├── .gitignore
 ├── .env.example
 └── README.md
 ```
+
 
 ## Getting Started
 
