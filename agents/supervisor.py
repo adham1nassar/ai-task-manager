@@ -1,11 +1,12 @@
 
 import json
+import os
 
 from ollama import Client
 from agents.task_agent import run_task_agent
 from agents.scheduling_agent import run_scheduling_agent
 
-client = Client(host="http://localhost:11434")
+client = Client(host=os.getenv("OLLAMA_HOST", "http://localhost:11434"))
 
 MODEL = "qwen3:4b-instruct-2507-q4_K_M"
 

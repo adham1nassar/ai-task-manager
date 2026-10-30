@@ -1,8 +1,10 @@
 
+import os
+
 from ollama import Client
 
 # Connect to Ollama running on Windows
-client = Client(host="http://localhost:11434")
+client = Client(host=os.getenv("OLLAMA_HOST", "http://localhost:11434"))
 
 # Our locally installed AI model
 MODEL = "qwen3:4b-instruct-2507-q4_K_M"
